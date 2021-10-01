@@ -18,7 +18,7 @@ type Result
   | Win2
   | Tie
 
-type Memory
+type Scene
   = Result Result
   | Game
     { player1 : Player
@@ -26,10 +26,21 @@ type Memory
     , time : Int
     }
 
+type alias Score = Int
 
-main = game draw update init
+type alias Memory =
+  { score1 : Score
+  , score2 : Score
+  , scene : Scene
+  }
 
-init : Memory
+main = game draw update
+  { score1 = 0
+  , score2 = 0
+  , scene = init
+  }
+
+init : Scene
 init = Game
   { player1 =
       { direction = Right
@@ -45,12 +56,12 @@ init = Game
 draw : Computer -> Memory -> List Shape
 draw {screen} memory =
   let size = min screen.width screen.height in
-  case memory of
-    Result result -> drawWin size result
+  case memory.scene of
+    Result result -> drawWin size memory.score1 memory.score2 result
     Game {player1, player2} -> drawGame size player1 player2
 
-drawWin : Float -> Result -> List Shape
-drawWin size result =
+drawWin : Float -> Score -> Score -> Result -> List Shape
+drawWin size score1 score2 result =
   let
     (color, text) =
       case result of
@@ -61,10 +72,13 @@ drawWin size result =
   [ square color size
   , words white text
       |> scale 5
-      |> moveUp 50
+      |> moveUp 100
+  , words white (String.fromInt score1 ++ " - " ++ String.fromInt score2)
+      |> scale 5
+      |> moveDown 15
   , words white "Press space to restart."
       |> scale 2
-      |> moveDown 50
+      |> moveDown 100
   ]
 
 drawGame : Float -> Player -> Player -> List Shape
@@ -81,15 +95,15 @@ drawGame size player1 player2 =
 
 update : Computer -> Memory -> Memory
 update {keyboard} memory =
-  case memory of
+  case memory.scene of
     Result result ->
-      if keyboard.space then init
-      else Result result
+      if keyboard.space then { memory | scene = init }
+      else memory
     Game {player1, player2, time} ->
-      updateGame keyboard player1 player2 time
+      updateGame keyboard memory.score1 memory.score2 player1 player2 time
 
-updateGame : Keyboard -> Player -> Player -> Int -> Memory
-updateGame keyboard player1 player2 time =
+updateGame : Keyboard -> Score -> Score -> Player -> Player -> Int -> Memory
+updateGame keyboard score1 score2 player1 player2 time =
   let
     keyDown k = Set.member k (keyboard.keys)
 
@@ -139,16 +153,32 @@ updateGame keyboard player1 player2 time =
     dead2 =
       Nonempty.member point2 points1 ||
       Nonempty.member point2 player2.points
+
+    scene =
+      case (dead1, dead2) of
+        (True, True) -> Result Tie
+        (False, True) -> Result Win1
+        (True, False) -> Result Win2
+        (False, False) -> Game
+          { player1 = newPlayer1
+          , player2 = newPlayer2
+          , time = time + 1
+          }
+
+    newScore1 =
+      case scene of
+        Result Win1 -> score1 + 1
+        _ -> score1
+
+    newScore2 =
+      case scene of
+        Result Win2 -> score2 + 1
+        _ -> score2
   in
-  case (dead1, dead2) of
-    (True, True) -> Result Tie
-    (False, True) -> Result Win1
-    (True, False) -> Result Win2
-    (False, False) -> Game
-      { player1 = newPlayer1
-      , player2 = newPlayer2
-      , time = time + 1
-      }
+  { score1 = newScore1
+  , score2 = newScore2
+  , scene = scene
+  }
 
 move : Direction -> Point -> Point
 move direction (x, y) =
