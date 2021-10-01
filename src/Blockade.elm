@@ -1,4 +1,4 @@
-module Tron exposing (main)
+module Blockade exposing (main)
 
 import Playground exposing (..)
 import List.Nonempty as Nonempty exposing (Nonempty)
