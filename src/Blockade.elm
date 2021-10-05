@@ -115,10 +115,10 @@ updateGame keyboard score1 score2 player1 player2 time =
       else player1.direction
 
     direction2 =
-      if keyboard.up then Up
-      else if keyboard.down then Down
-      else if keyboard.left then Left
-      else if keyboard.right then Right
+      if keyboard.up && player2.direction /= Down then Up
+      else if keyboard.down && player2.direction /= Up then Down
+      else if keyboard.left && player2.direction /= Right then Left
+      else if keyboard.right && player2.direction /= Left then Right
       else player2.direction
 
     point1 = move direction1 (Nonempty.head player1.points)
