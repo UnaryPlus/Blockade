@@ -105,7 +105,9 @@ update {keyboard} memory =
 updateGame : Keyboard -> Score -> Score -> Player -> Player -> Int -> Memory
 updateGame keyboard score1 score2 player1 player2 time =
   let
-    keyDown k = Set.member k (keyboard.keys)
+    keyDown k = 
+      Set.member k (keyboard.keys) ||
+      Set.member (String.toUpper k) (keyboard.keys)
 
     direction1 =
       if keyDown "w" && player1.direction /= Down then Up
